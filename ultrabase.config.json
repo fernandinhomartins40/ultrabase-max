@@ -1,0 +1,19 @@
+{
+  "name": "Ultrabase",
+  "description": "Multi-tenant Supabase fork for managing multiple projects and organizations",
+  "version": "1.0.0",
+  "architecture": "multi-tenant",
+  "features": {
+    "multi_tenancy": true,
+    "organizations": true,
+    "projects": true,
+    "isolation": "schema-based",
+    "auth": "contextual"
+  },
+  "components": {
+    "auth": "ultrabase-auth",
+    "studio": "ultrabase-studio",
+    "api": "ultrabase-api",
+    "cli": "ultrabase-cli"
+  }
+}
