@@ -57,15 +57,31 @@ jobs:
           host: 31.97.85.98
           username: root
           password: ${{ secrets.VPS_PASSWORD }}
+          timeout: 300s
           script: |
-            bash -c "$(curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/main/deploy/setup.sh)" "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ github.sha }}"
+            # Download and execute setup script
+            curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/main/deploy/setup.sh | bash -s -- "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ github.sha }}"
 
-      - name: Health check
+      - name: Final Health Check
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: 31.97.85.98
           username: root
           password: ${{ secrets.VPS_PASSWORD }}
+          timeout: 60s
           script: |
-            curl -f http://localhost/health || exit 1
-            echo "✅ Deploy realizado com sucesso!"
+            # Wait a bit more for service to be fully ready
+            sleep 10
+            
+            # Check health endpoint
+            for i in {1..5}; do
+              if curl -f http://localhost/health; then
+                echo "✅ Deploy verificado com sucesso! (tentativa $i)"
+                exit 0
+              fi
+              echo "⏳ Aguardando serviço ficar disponível... (tentativa $i/5)"
+              sleep 10
+            done
+            
+            echo "❌ Falha na verificação do deploy"
+            exit 1

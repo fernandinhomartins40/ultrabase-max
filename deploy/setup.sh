@@ -5,7 +5,13 @@ set -e
 # Uso: ./setup.sh <imagem_docker>
 
 IMAGE_NAME=${1:-ghcr.io/fernandinhomartins40/ultrabase-max:latest}
-echo "🚀 Iniciando deploy com imagem: $IMAGE_NAME"
+echo "🚀 Iniciando deploy da Ultrabase com imagem: $IMAGE_NAME"
+echo "📅 $(date)"
+
+# Create logging function
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
+}
 
 # Criar diretório de trabalho
 mkdir -p /opt/ultrabase
@@ -72,7 +78,7 @@ EOF
 fi
 
 # Criar docker-compose.yml
-echo "⚙️  Criando docker-compose.yml..."
+log "⚙️  Criando docker-compose.yml..."
 cat > docker-compose.yml << EOF
 version: '3.8'
 
@@ -83,22 +89,29 @@ services:
     restart: unless-stopped
     ports:
       - "3000:3000"
-      - "8000:8000"
     environment:
       - NODE_ENV=production
+      - PORT=3000
+      - HOSTNAME=0.0.0.0
+      - NEXT_TELEMETRY_DISABLED=1
+      - NEXT_PUBLIC_IS_PLATFORM=false
     env_file:
       - .env
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs
+      - /etc/localtime:/etc/localtime:ro
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 60s
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    networks:
+      - ultrabase-network
 
   db:
     image: supabase/postgres:15.8.1.060
@@ -114,11 +127,15 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-db:/docker-entrypoint-initdb.d
+      - /etc/localtime:/etc/localtime:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s
+    networks:
+      - ultrabase-network
 
   nginx:
     image: nginx:alpine
@@ -130,11 +147,25 @@ services:
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - ./ssl:/etc/nginx/ssl:ro
+      - /etc/localtime:/etc/localtime:ro
     depends_on:
-      - ultrabase
+      ultrabase:
+        condition: service_healthy
+    networks:
+      - ultrabase-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 volumes:
   postgres_data:
+    driver: local
+
+networks:
+  ultrabase-network:
+    driver: bridge
 EOF
 
 # Criar nginx.conf
@@ -300,26 +331,56 @@ EOF
 chmod +x status.sh
 
 # Parar containers antigos se existirem
-docker-compose down || true
+log "🛑 Parando containers antigos..."
+docker-compose down --remove-orphans || true
+
+# Limpar imagens antigas para economizar espaço
+log "🧹 Limpando imagens antigas..."
+docker image prune -f || true
 
 # Atualizar imagem
-echo "📥 Baixando imagem: $IMAGE_NAME"
+log "📥 Baixando imagem: $IMAGE_NAME"
 docker pull $IMAGE_NAME
 
-# Iniciar serviços
-echo "🚀 Iniciando serviços..."
+# Iniciar serviços com logs
+log "🚀 Iniciando serviços..."
 docker-compose up -d
 
-# Aguardar inicialização
-echo "⏳ Aguardando inicialização..."
-sleep 30
+# Aguardar inicialização com timeout
+log "⏳ Aguardando inicialização dos serviços..."
+timeout=180
+counter=0
+while [ $counter -lt $timeout ]; do
+    if curl -sf http://localhost/health > /dev/null 2>&1; then
+        log "✅ Serviços inicializados com sucesso!"
+        break
+    fi
+    sleep 5
+    counter=$((counter + 5))
+    log "⏳ Aguardando... ($counter/$timeout segundos)"
+done
+
+if [ $counter -ge $timeout ]; then
+    log "❌ Timeout na inicialização dos serviços"
+    log "📊 Status dos containers:"
+    docker-compose ps
+    log "📋 Logs do container principal:"
+    docker-compose logs --tail=20 ultrabase
+    exit 1
+fi
 
 # Verificar saúde dos serviços
-echo "🔍 Verificando saúde dos serviços..."
+log "🔍 Verificando saúde dos serviços..."
 docker-compose ps
 
-# Criar health check endpoint
-curl -f http://localhost/health && echo "✅ Serviço está rodando!" || echo "❌ Serviço não está respondendo"
+# Teste final de conectividade
+if curl -f http://localhost/health > /dev/null 2>&1; then
+    log "✅ Deploy realizado com sucesso! Serviço está rodando!"
+    log "🌐 Acesse: http://31.97.85.98"
+else
+    log "❌ Serviço não está respondendo corretamente"
+    exit 1
+fi
 
 # Configurar backup automático (opcional)
 if ! crontab -l | grep -q "backup.sh"; then
