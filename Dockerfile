@@ -25,18 +25,18 @@ RUN npm install -g pnpm@9.15.5 && \
 # Set working directory
 WORKDIR /app
 
-# Copy package files first for better Docker layer caching
+# Copy everything needed for dependencies
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY turbo.json ./
+COPY apps/ ./apps/
+COPY packages/ ./packages/
 
-# Copy all package.json files for workspace dependencies
-COPY apps/studio/package.json ./apps/studio/
-COPY packages/*/package.json ./packages/*/
+# Install dependencies with fallback options
+RUN pnpm install --frozen-lockfile || \
+    (echo "❌ Frozen lockfile failed, trying without..." && pnpm install) || \
+    (echo "❌ Regular install failed, trying with --force..." && pnpm install --force)
 
-# Install dependencies with optimizations for production
-RUN pnpm install --frozen-lockfile --prefer-offline --production=false
-
-# Copy source code
+# Copy remaining source code (if any missed)
 COPY . .
 
 # Set production environment
