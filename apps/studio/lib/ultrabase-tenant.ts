@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import { Database } from 'types'
+import { Database } from '../../../packages/common/database-types'
 
 // Tenant context interface
 export interface TenantContext {

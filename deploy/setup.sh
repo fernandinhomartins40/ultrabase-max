@@ -143,10 +143,8 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
-      - "443:443"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./ssl:/etc/nginx/ssl:ro
       - /etc/localtime:/etc/localtime:ro
     depends_on:
       ultrabase:
@@ -180,19 +178,10 @@ http {
         server ultrabase:3000;
     }
 
-    upstream ultrabase-api {
-        server ultrabase:8000;
-    }
-
-    # Rate limiting
-    limit_req_zone $binary_remote_addr zone=api:10m rate=10r/s;
-    limit_req_zone $binary_remote_addr zone=web:10m rate=30r/s;
-
     # Security headers
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header X-XSS-Protection "1; mode=block" always;
-    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
 
     # Gzip compression
     gzip on;
@@ -204,24 +193,8 @@ http {
         listen 80;
         server_name _;
         
-        # Redirect HTTP to HTTPS in production
-        # return 301 https://$server_name$request_uri;
-        
         location / {
-            limit_req zone=web burst=20 nodelay;
             proxy_pass http://ultrabase;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-            proxy_connect_timeout 60s;
-            proxy_send_timeout 60s;
-            proxy_read_timeout 60s;
-        }
-        
-        location /api/ {
-            limit_req zone=api burst=50 nodelay;
-            proxy_pass http://ultrabase-api;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -241,7 +214,7 @@ http {
 EOF
 
 # Criar diretórios necessários
-mkdir -p data logs ssl init-db
+mkdir -p data logs init-db
 
 # Criar script de atualização
 cat > update.sh << 'EOF'

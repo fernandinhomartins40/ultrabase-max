@@ -1,8 +1,8 @@
 {
-  "name": "supabase",
-  "description": "The Postgres Development Platform.",
-  "version": "0.0.0",
-  "author": "Supabase, Inc.",
+  "name": "ultrabase",
+  "description": "Multi-tenant Supabase fork for managing multiple projects and organizations",
+  "version": "1.0.0",
+  "author": "Ultrabase Team",
   "license": "Apache-2.0",
   "private": true,
   "scripts": {
@@ -45,7 +45,28 @@
     "setup:cli": "supabase start -x studio && supabase status --output json > keys.json && node scripts/generateLocalEnv.js",
     "generate:types": "supabase gen types typescript --local > ./supabase/functions/common/database-types.ts",
     "api:codegen": "cd packages/api-types && pnpm run codegen",
-    "knip": "pnpx knip@~5.50.0"
+    "knip": "pnpx knip@~5.50.0",
+    
+    "ultrabase:setup": "node scripts/setup-ultrabase.js",
+    "ultrabase:start": "cd docker && docker compose -f docker-compose.ultrabase.yml up",
+    "ultrabase:start:dev": "cd docker && docker compose -f docker-compose.ultrabase.yml -f docker-compose.dev.yml up",
+    "ultrabase:stop": "cd docker && docker compose -f docker-compose.ultrabase.yml down",
+    "ultrabase:reset": "cd docker && docker compose -f docker-compose.ultrabase.yml down -v --remove-orphans",
+    
+    "supabase:start": "supabase start -x studio",
+    "supabase:stop": "supabase stop",
+    "supabase:reset": "supabase db reset --local",
+    "supabase:migration": "supabase migration up",
+    "supabase:types": "supabase gen types typescript --local > ./supabase/functions/common/database-types.ts",
+    
+    "cli:build": "pnpm --prefix packages/cli build",
+    "cli:dev": "pnpm --prefix packages/cli dev",
+    "cli:test": "pnpm --prefix packages/cli test",
+    
+    "ultrabase:cli": "pnpm --prefix packages/cli ultrabase",
+    "ultrabase:cli:dev": "pnpm --prefix packages/cli dev:ultrabase",
+    
+    "e2e:ultrabase": "pnpm --prefix e2e/studio run e2e:dev-ultrabase"
   },
   "devDependencies": {
     "@aws-sdk/client-secrets-manager": "^3.410.0",
@@ -62,7 +83,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/supabase/supabase.git"
+    "url": "git+https://github.com/fernandinhomartins40/ultrabase-max.git"
   },
   "pnpm": {
     "overrides": {
@@ -78,6 +99,16 @@
     "pnpm": ">=9",
     "node": ">=22"
   },
-  "keywords": ["postgres", "firebase", "storage", "functions", "database", "auth"],
+  "keywords": [
+    "postgres",
+    "firebase", 
+    "storage",
+    "functions",
+    "database",
+    "auth",
+    "multi-tenant",
+    "supabase",
+    "ultrabase"
+  ],
   "packageManager": "pnpm@9.15.5"
 }
