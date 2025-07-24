@@ -39,9 +39,6 @@ RUN pnpm install --frozen-lockfile || \
 # Copy remaining source code (if any missed)
 COPY . .
 
-# Set execute permissions for scripts
-RUN chmod +x scripts/*.sh
-
 # Set production environment
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1

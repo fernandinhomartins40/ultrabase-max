@@ -22,7 +22,7 @@
     "last-changed:reset": "pnpm run last-changed -- --reset",
     "lint": "next lint",
     "lint:mdx": "supa-mdx-lint content --config ../../supa-mdx-lint.config.toml",
-    "postbuild": "pnpm run build:sitemap && pnpm run build:llms && ./../../scripts/upload-static-assets.sh",
+    "postbuild": "pnpm run build:sitemap && pnpm run build:llms",
     "prebuild": "pnpm run codegen:graphql && pnpm run codegen:references && pnpm run codegen:examples",
     "predev": "pnpm run codegen:graphql && pnpm run codegen:references && pnpm run codegen:examples",
     "preembeddings": "pnpm run codegen:references",
