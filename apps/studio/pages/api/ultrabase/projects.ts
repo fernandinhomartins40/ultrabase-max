@@ -1,6 +1,19 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
+import { createClient } from '@supabase/supabase-js'
 import { generateProjectSlug } from 'lib/ultrabase-tenant'
+
+// Create a Supabase client for server-side operations
+function createServerSupabaseClient(req: NextApiRequest, res: NextApiResponse) {
+  const supabaseUrl = process.env.SUPABASE_URL || 'http://localhost:8000'
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || process.env.SERVICE_ROLE_KEY || ''
+  
+  return createClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  })
+}
 
 export default async function handler(
   req: NextApiRequest,
