@@ -25,18 +25,39 @@ RUN npm install -g pnpm@9.15.5 && \
 # Set working directory
 WORKDIR /app
 
-# Copy everything needed for dependencies
+# Copy package files first for better layer caching
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY turbo.json ./
-COPY apps/ ./apps/
+
+# Copy only package.json files from apps and packages for dependency resolution
+COPY apps/studio/package.json ./apps/studio/package.json
+COPY apps/docs/package.json ./apps/docs/package.json
+COPY apps/www/package.json ./apps/www/package.json
+COPY apps/cms/package.json ./apps/cms/package.json
+COPY apps/design-system/package.json ./apps/design-system/package.json
+COPY apps/ui-library/package.json ./apps/ui-library/package.json
+
+# Copy packages directory structure for workspace resolution
 COPY packages/ ./packages/
 
-# Install dependencies with fallback options
-RUN pnpm install --frozen-lockfile || \
-    (echo "❌ Frozen lockfile failed, trying without..." && pnpm install) || \
-    (echo "❌ Regular install failed, trying with --force..." && pnpm install --force)
+# Configure pnpm settings for Docker environment
+RUN pnpm config set store-dir /app/.pnpm-store && \
+    pnpm config set cache-dir /app/.pnpm-cache && \
+    pnpm config set state-dir /app/.pnpm-state
 
-# Copy remaining source code (if any missed)
+# Install dependencies with optimized strategy
+RUN echo "🔄 Installing dependencies..." && \
+    echo "📊 pnpm version: $(pnpm --version)" && \
+    echo "📊 Node version: $(node --version)" && \
+    pnpm install --frozen-lockfile --prefer-offline --production=false || \
+    (echo "⚠️  Frozen lockfile failed, cleaning and retrying..." && \
+     rm -rf node_modules .pnpm-store .pnpm-cache .pnpm-state && \
+     pnpm install --no-frozen-lockfile --production=false) || \
+    (echo "⚠️  Standard install failed, trying with force..." && \
+     rm -rf node_modules .pnpm-store .pnpm-cache .pnpm-state && \
+     pnpm install --force --no-frozen-lockfile --production=false)
+
+# Copy remaining source code after dependency installation
 COPY . .
 
 # Set production environment
