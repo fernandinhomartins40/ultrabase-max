@@ -1,19 +1,162 @@
-# Root folder of this turbo monorepo
-# Doesn't send useless context to Docker daemon
+# Dependencies
+node_modules
+.pnpm-store
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+.next
+out
+dist
+build
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage
+*.lcov
+.nyc_output
+
+# Dependency directories
+jspm_packages/
+
+# Optional npm cache directory
+.npm
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variables file
+.env
+
+# parcel-bundler cache (https://parceljs.org/)
+.cache
+.parcel-cache
+
+# next.js build output
+.next
+
+# nuxt.js build output
+.nuxt
+
+# vuepress build output
+.vuepress/dist
+
+# Serverless directories
+.serverless
+
+# FuseBox cache
+.fusebox/
+
+# DynamoDB Local files
+.dynamodb/
+
+# TernJS port file
+.tern-port
+
+# Stores VSCode versions used for testing VSCode extensions
+.vscode-test
+
+# Git
 .git
+.gitignore
 .github
-about
-docker
-examples
-i18n
-**/node_modules
-apps/docs/spec
-supabase
-tests
 
-**/.next
-.vercel
-**/.env.*
+# Documentation
+*.md
+docs/
+DEPLOY_CHECKLIST.md
 
+# Test files
+**/*.test.js
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.js
+**/*.spec.ts
+**/*.spec.tsx
+tests/
+__tests__/
+
+# Development files
+.vscode/
+.prettierrc
+.eslintrc*
+.prettierignore
+.eslintignore
+.editorconfig
+
+# Docker
+Dockerfile
+docker-compose.yml
 .dockerignore
-apps/studio/Dockerfile
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+.temp/
+
+# Cache
+.cache/
+.parcel-cache/
+.next/cache/
+.webpack/
+
+# Supabase
+supabase/.branches
+supabase/.temp
+
+# CMS
+apps/cms/.next
+apps/cms/.contentlayer
+
+# Design System
+apps/design-system/.next
+apps/design-system/.contentlayer
+
+# Studio
+apps/studio/.next
+apps/studio/coverage
+apps/studio/.env.local
+
+# Examples
+examples/
+
+# E2E
+e2e/
+
+# Scripts
+scripts/
