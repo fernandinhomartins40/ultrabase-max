@@ -1,42 +1,48 @@
-import { IS_PLATFORM } from 'lib/constants'
+import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-export const config = {
-  matcher: '/api/:function*',
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
+
+  // Handle health check endpoint without authentication
+  if (pathname === '/api/health') {
+    // Allow health checks to pass through without any middleware processing
+    return NextResponse.next()
+  }
+
+  // Handle environment-specific routing
+  if (process.env.NEXT_PUBLIC_IS_PLATFORM !== 'true') {
+    // Self-hosted mode - redirect to default project
+    if (pathname === '/') {
+      return NextResponse.redirect(new URL('/project/default', request.url))
+    }
+  }
+
+  // Add security headers for all responses
+  const response = NextResponse.next()
+
+  // Security headers
+  response.headers.set('X-Frame-Options', 'DENY')
+  response.headers.set('X-Content-Type-Options', 'nosniff')
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+
+  // CSP for self-hosted
+  if (process.env.NEXT_PUBLIC_IS_PLATFORM !== 'true') {
+    response.headers.set('Content-Security-Policy', "frame-ancestors 'none';")
+  }
+
+  return response
 }
 
-// [Joshen] Return 404 for all next.js API endpoints EXCEPT the ones we use in hosted:
-const HOSTED_SUPPORTED_API_URLS = [
-  // These are using OpenAI, can be removed once Bedrock is default
-  '/ai/sql/generate-v3',
-  '/ai/sql/complete',
-  '/ai/sql/cron',
-  '/ai/sql/title',
-  // These are using Bedrock
-  '/ai/sql/generate-v4',
-  '/ai/sql/complete-v2',
-  '/ai/sql/cron-v2',
-  '/ai/sql/title-v2',
-  '/ai/edge-function/complete-v2',
-  // Others
-  '/ai/edge-function/complete',
-  '/ai/onboarding/design',
-  '/ai/feedback/classify',
-  '/get-ip-address',
-  '/get-utc-time',
-  '/check-cname',
-  '/edge-functions/test',
-  '/edge-functions/body',
-]
-
-export function middleware(request: NextRequest) {
-  if (
-    IS_PLATFORM &&
-    !HOSTED_SUPPORTED_API_URLS.some((url) => request.nextUrl.pathname.endsWith(url))
-  ) {
-    return Response.json(
-      { success: false, message: 'Endpoint not supported on hosted' },
-      { status: 404 }
-    )
-  }
+export const config = {
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public folder files
+     */
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
 }

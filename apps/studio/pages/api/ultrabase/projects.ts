@@ -6,19 +6,16 @@ import { generateProjectSlug } from 'lib/ultrabase-tenant'
 function createServerSupabaseClient(req: NextApiRequest, res: NextApiResponse) {
   const supabaseUrl = process.env.SUPABASE_URL || 'http://localhost:8000'
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || process.env.SERVICE_ROLE_KEY || ''
-  
+
   return createClient(supabaseUrl, supabaseServiceKey, {
     auth: {
       autoRefreshToken: false,
-      persistSession: false
-    }
+      persistSession: false,
+    },
   })
 }
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const supabase = createServerSupabaseClient(req, res)
 
   try {
@@ -56,7 +53,8 @@ async function handleGetProjects(
   try {
     const { data: projects, error } = await supabase
       .from('ultrabase.projects')
-      .select(`
+      .select(
+        `
         *,
         ultrabase.project_members!inner(
           role
@@ -64,7 +62,8 @@ async function handleGetProjects(
         ultrabase.organizations!inner(
           name
         )
-      `)
+      `
+      )
       .eq('ultrabase.project_members.user_id', userId)
       .order('created_at', { ascending: false })
 
@@ -135,7 +134,7 @@ async function handleCreateProject(
         .single()
 
       if (!existingProject) break
-      
+
       uniqueSlug = `${slug}-${counter}`
       counter++
     }
@@ -158,13 +157,11 @@ async function handleCreateProject(
     }
 
     // Add user as owner of the project
-    const { error: memberError } = await supabase
-      .from('ultrabase.project_members')
-      .insert({
-        project_id: project.id,
-        user_id: userId,
-        role: 'owner',
-      })
+    const { error: memberError } = await supabase.from('ultrabase.project_members').insert({
+      project_id: project.id,
+      user_id: userId,
+      role: 'owner',
+    })
 
     if (memberError) {
       console.error('Error adding project member:', memberError)
@@ -173,9 +170,9 @@ async function handleCreateProject(
 
     // Create project-specific schema
     const projectSchemaName = `project_${project.id.replace(/-/g, '_')}`
-    
+
     const { error: schemaError } = await supabase.rpc('create_project_schema', {
-      schema_name: projectSchemaName
+      schema_name: projectSchemaName,
     })
 
     if (schemaError) {

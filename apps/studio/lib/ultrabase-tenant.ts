@@ -61,9 +61,11 @@ export class TenantContextManager {
   }
 
   isValidContext(): boolean {
-    return this.currentContext !== null && 
-           this.currentContext.projectId !== '' && 
-           this.currentContext.organizationId !== ''
+    return (
+      this.currentContext !== null &&
+      this.currentContext.projectId !== '' &&
+      this.currentContext.organizationId !== ''
+    )
   }
 }
 
@@ -113,7 +115,11 @@ export class OrganizationNotFoundError extends TenantError {
 
 export class InsufficientPermissionsError extends TenantError {
   constructor(requiredRole: string) {
-    super(`Insufficient permissions. Required role: ${requiredRole}`, 'INSUFFICIENT_PERMISSIONS', 403)
+    super(
+      `Insufficient permissions. Required role: ${requiredRole}`,
+      'INSUFFICIENT_PERMISSIONS',
+      403
+    )
   }
 }
 

@@ -29,10 +29,10 @@ export function ProjectSelector({ className }: ProjectSelectorProps) {
     ['ultrabase-projects', profile?.id],
     async () => {
       if (!profile?.id) return []
-      
+
       const response = await fetch('/api/ultrabase/projects')
       if (!response.ok) throw new Error('Failed to fetch projects')
-      
+
       return response.json() as Promise<ProjectInfo[]>
     },
     {
@@ -45,9 +45,9 @@ export function ProjectSelector({ className }: ProjectSelectorProps) {
   useEffect(() => {
     const projectRef = router.query.ref as string
     const savedProjectId = localStorage.getItem('ultrabase-selected-project')
-    
+
     if (projectRef) {
-      const project = projects.find(p => p.slug === projectRef || p.id === projectRef)
+      const project = projects.find((p) => p.slug === projectRef || p.id === projectRef)
       if (project) {
         setSelectedProject(project)
         tenantManager.setContext({
@@ -59,7 +59,7 @@ export function ProjectSelector({ className }: ProjectSelectorProps) {
         localStorage.setItem('ultrabase-selected-project', project.id)
       }
     } else if (savedProjectId && projects.length > 0) {
-      const project = projects.find(p => p.id === savedProjectId)
+      const project = projects.find((p) => p.id === savedProjectId)
       if (project) {
         setSelectedProject(project)
         tenantManager.setContext({
@@ -92,7 +92,7 @@ export function ProjectSelector({ className }: ProjectSelectorProps) {
       role: project.role,
     })
     localStorage.setItem('ultrabase-selected-project', project.id)
-    
+
     // Navigate to project dashboard
     router.push(`/project/${project.slug}`)
   }
@@ -149,7 +149,7 @@ export function ProjectSelector({ className }: ProjectSelectorProps) {
         <DropdownMenuContent align="start" className="w-80">
           <DropdownMenuLabel>Projects</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          
+
           {projects.map((project) => (
             <DropdownMenuItem
               key={project.id}
@@ -167,23 +167,23 @@ export function ProjectSelector({ className }: ProjectSelectorProps) {
               )}
             </DropdownMenuItem>
           ))}
-          
+
           <DropdownMenuSeparator />
-          
+
           <DropdownMenuItem onSelect={handleCreateProject}>
             <Plus className="mr-2 h-4 w-4" />
             Create New Project
           </DropdownMenuItem>
-          
+
           {selectedProject && (
             <>
               <DropdownMenuSeparator />
-              
+
               <DropdownMenuItem onSelect={() => handleProjectSettings(selectedProject)}>
                 <Settings className="mr-2 h-4 w-4" />
                 Project Settings
               </DropdownMenuItem>
-              
+
               <DropdownMenuItem onSelect={() => handleOrganizationSettings(selectedProject)}>
                 <Users className="mr-2 h-4 w-4" />
                 Organization Settings

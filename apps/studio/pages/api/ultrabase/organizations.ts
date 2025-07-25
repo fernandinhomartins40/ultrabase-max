@@ -6,19 +6,16 @@ import { TenantContextManager } from 'lib/ultrabase-tenant'
 function createServerSupabaseClient(req: NextApiRequest, res: NextApiResponse) {
   const supabaseUrl = process.env.SUPABASE_URL || 'http://localhost:8000'
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || process.env.SERVICE_ROLE_KEY || ''
-  
+
   return createClient(supabaseUrl, supabaseServiceKey, {
     auth: {
       autoRefreshToken: false,
-      persistSession: false
-    }
+      persistSession: false,
+    },
   })
 }
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const supabase = createServerSupabaseClient(req, res)
 
   try {
@@ -56,12 +53,14 @@ async function handleGetOrganizations(
   try {
     const { data: organizations, error } = await supabase
       .from('ultrabase.organizations')
-      .select(`
+      .select(
+        `
         *,
         ultrabase.organization_members!inner(
           role
         )
-      `)
+      `
+      )
       .eq('ultrabase.organization_members.user_id', userId)
       .order('created_at', { ascending: false })
 
@@ -131,13 +130,11 @@ async function handleCreateOrganization(
     }
 
     // Add user as owner
-    const { error: memberError } = await supabase
-      .from('ultrabase.organization_members')
-      .insert({
-        organization_id: organization.id,
-        user_id: userId,
-        role: 'owner',
-      })
+    const { error: memberError } = await supabase.from('ultrabase.organization_members').insert({
+      organization_id: organization.id,
+      user_id: userId,
+      role: 'owner',
+    })
 
     if (memberError) {
       console.error('Error adding organization member:', memberError)

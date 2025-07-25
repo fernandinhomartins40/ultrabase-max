@@ -34,7 +34,7 @@ class UltrabaseCLI {
     } catch (error) {
       console.error('Error loading config:', error)
     }
-    
+
     return {
       apiUrl: 'http://localhost:8082',
       accessToken: '',
@@ -47,7 +47,7 @@ class UltrabaseCLI {
       if (!fs.existsSync(configDir)) {
         fs.mkdirSync(configDir, { recursive: true })
       }
-      
+
       fs.writeFileSync(this.configPath, JSON.stringify(this.config, null, 2))
     } catch (error) {
       console.error('Error saving config:', error)
@@ -56,7 +56,7 @@ class UltrabaseCLI {
 
   async login(apiUrl?: string) {
     console.log(chalk.blue('🔐 Ultrabase Login'))
-    
+
     const answers = await inquirer.prompt([
       {
         type: 'input',
@@ -74,19 +74,19 @@ class UltrabaseCLI {
 
     this.config.apiUrl = answers.apiUrl
     this.config.accessToken = answers.accessToken
-    
+
     // Test the connection
     try {
       const response = await fetch(`${answers.apiUrl}/api/ultrabase/organizations`, {
         headers: {
-          'Authorization': `Bearer ${answers.accessToken}`,
+          Authorization: `Bearer ${answers.accessToken}`,
         },
       })
-      
+
       if (!response.ok) {
         throw new Error('Invalid credentials')
       }
-      
+
       this.saveConfig()
       console.log(chalk.green('✅ Successfully logged in!'))
     } catch (error) {
@@ -96,25 +96,25 @@ class UltrabaseCLI {
 
   async listOrganizations() {
     console.log(chalk.blue('🏢 Your Organizations'))
-    
+
     try {
       const response = await fetch(`${this.config.apiUrl}/api/ultrabase/organizations`, {
         headers: {
-          'Authorization': `Bearer ${this.config.accessToken}`,
+          Authorization: `Bearer ${this.config.accessToken}`,
         },
       })
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch organizations')
       }
-      
+
       const organizations = await response.json()
-      
+
       if (organizations.length === 0) {
         console.log(chalk.yellow('No organizations found'))
         return
       }
-      
+
       organizations.forEach((org: any) => {
         console.log(`${chalk.green('•')} ${org.name} (${org.slug}) - ${org.role}`)
       })
@@ -125,27 +125,29 @@ class UltrabaseCLI {
 
   async listProjects() {
     console.log(chalk.blue('📁 Your Projects'))
-    
+
     try {
       const response = await fetch(`${this.config.apiUrl}/api/ultrabase/projects`, {
         headers: {
-          'Authorization': `Bearer ${this.config.accessToken}`,
+          Authorization: `Bearer ${this.config.accessToken}`,
         },
       })
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch projects')
       }
-      
+
       const projects = await response.json()
-      
+
       if (projects.length === 0) {
         console.log(chalk.yellow('No projects found'))
         return
       }
-      
+
       projects.forEach((project: any) => {
-        console.log(`${chalk.green('•')} ${project.name} (${project.slug}) - ${project.organizationName}`)
+        console.log(
+          `${chalk.green('•')} ${project.name} (${project.slug}) - ${project.organizationName}`
+        )
         console.log(`  Role: ${project.role}, Status: ${project.status}`)
       })
     } catch (error) {
@@ -155,7 +157,7 @@ class UltrabaseCLI {
 
   async createOrganization() {
     console.log(chalk.blue('🏢 Create New Organization'))
-    
+
     const answers = await inquirer.prompt([
       {
         type: 'input',
@@ -167,7 +169,8 @@ class UltrabaseCLI {
         type: 'input',
         name: 'slug',
         message: 'Organization slug:',
-        validate: (input) => /^[a-z0-9-]+$/.test(input) || 'Slug must be lowercase letters, numbers, and hyphens',
+        validate: (input) =>
+          /^[a-z0-9-]+$/.test(input) || 'Slug must be lowercase letters, numbers, and hyphens',
       },
       {
         type: 'input',
@@ -180,17 +183,17 @@ class UltrabaseCLI {
       const response = await fetch(`${this.config.apiUrl}/api/ultrabase/organizations`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${this.config.accessToken}`,
+          Authorization: `Bearer ${this.config.accessToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(answers),
       })
-      
+
       if (!response.ok) {
         const error = await response.json()
         throw new Error(error.error || 'Failed to create organization')
       }
-      
+
       const organization = await response.json()
       console.log(chalk.green(`✅ Organization "${organization.name}" created successfully!`))
     } catch (error) {
@@ -200,26 +203,28 @@ class UltrabaseCLI {
 
   async createProject() {
     console.log(chalk.blue('📁 Create New Project'))
-    
+
     // First, list organizations
     const orgResponse = await fetch(`${this.config.apiUrl}/api/ultrabase/organizations`, {
       headers: {
-        'Authorization': `Bearer ${this.config.accessToken}`,
+        Authorization: `Bearer ${this.config.accessToken}`,
       },
     })
-    
+
     if (!orgResponse.ok) {
       console.error(chalk.red('❌ Failed to fetch organizations'))
       return
     }
-    
+
     const organizations = await orgResponse.json()
-    
+
     if (organizations.length === 0) {
-      console.log(chalk.yellow('No organizations found. Create one first with: ultrabase org create'))
+      console.log(
+        chalk.yellow('No organizations found. Create one first with: ultrabase org create')
+      )
       return
     }
-    
+
     const answers = await inquirer.prompt([
       {
         type: 'list',
@@ -247,17 +252,17 @@ class UltrabaseCLI {
       const response = await fetch(`${this.config.apiUrl}/api/ultrabase/projects`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${this.config.accessToken}`,
+          Authorization: `Bearer ${this.config.accessToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(answers),
       })
-      
+
       if (!response.ok) {
         const error = await response.json()
         throw new Error(error.error || 'Failed to create project')
       }
-      
+
       const project = await response.json()
       console.log(chalk.green(`✅ Project "${project.name}" created successfully!`))
       console.log(chalk.blue(`🔗 URL: ${this.config.apiUrl}/project/${project.slug}`))
@@ -270,26 +275,26 @@ class UltrabaseCLI {
     try {
       const response = await fetch(`${this.config.apiUrl}/api/ultrabase/projects`, {
         headers: {
-          'Authorization': `Bearer ${this.config.accessToken}`,
+          Authorization: `Bearer ${this.config.accessToken}`,
         },
       })
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch projects')
       }
-      
+
       const projects = await response.json()
       const project = projects.find((p: any) => p.slug === projectSlug)
-      
+
       if (!project) {
         console.error(chalk.red(`❌ Project "${projectSlug}" not found`))
         return
       }
-      
+
       this.config.currentProject = project.id
       this.config.currentOrganization = project.organizationId
       this.saveConfig()
-      
+
       console.log(chalk.green(`✅ Now using project: ${project.name}`))
     } catch (error) {
       console.error(chalk.red('❌ Error:', error))
